@@ -1,0 +1,94 @@
+window['log'].innerHTML = ''
+fix Fn = Function
+
+fix _var = #(v) {
+  -> {
+    get: #{ -> v },
+    set: #(v1){ v = v1 }
+  }
+}
+
+fix _fix = #(v) {
+  -> {
+    get: #{ if(v == null) throw 'Getting uniniciliazated fix'; else -> v },
+    set: #(v1){ if(v != null) v = v1; else throw 'Setting already inicializated fix'}
+  }
+}
+
+fix _get = #(_get) {
+  -> {
+    get: _get,
+    set: #{ throw 'Setting value of property w/ only getter' }
+  }
+}
+
+fix _guard = #(_expr, def) {
+  if(typeof(_expr) == 'string')
+    _expr = Fn('$', _expr)
+  -> {
+    get: def.get,
+    set: #(v){ if(!_expr(v)) throw 'Guaurd failed'; def.set(v) }
+  }
+}
+
+fix _ofType = #(Type, def) {
+  -> _guard(#(v){ -> Object(v) instanceof Type }, def)
+} 
+
+fix Class = #(_publucSliceDef, _privateSliceDef, staticSliceDef) {
+  fix staticSlice = Object.create(null, staticSliceDef)
+  -> #(cast){
+    // TODO check that cast to private was called from C's method
+    if(cast != null && Object.getPrototypeOf(cast) === staticSlice) 
+      -> cast.sjsPrivateSlice
+    
+    var publucSliceDef = _publucSliceDef()
+    publucSliceDef.sjsPrivateSlice = _get(#{ -> privateSlice })
+    fix publucSlice = Object.create(staticSlice, publucSliceDef)
+    fix privateSlice = Object.create(publucSlice, _privateSliceDef())
+    
+    Object.getOwnPropertyNames(staticSlice).forEach(#(k){
+      if(typeof(staticSlice[k]) == 'function')
+        publucSlice[k] = staticSlice[k].bind(privateSlice)
+    })
+    
+    -> publucSlice
+  }
+}
+
+// test
+
+Class({
+  'private a' 
+})
+
+fix C = Class(
+  #{ // publucSlice
+    -> {
+      x: _var(1)
+    }
+  },
+  #{ // privateSlice
+    -> {
+      _cX: _var(2)
+    }
+  },
+  { // staticSlice
+    _getPX: _fix(#{ -> @pX }),
+    _setPX: _fix(#(pX){ @pX = pX }),
+    _sumXAndPX: _fix(#{ -> @x + @pX })
+  }
+)
+
+
+fix a = C()
+a._setPX(100)
+_log(a._getPX())
+a.x = 45
+_log('x' in a)
+_log('pX' in a)
+_log(a._sumXAndPX()) 
+_log(C(a).pX) // private cast
+
+
+fix C
