@@ -7,4 +7,4 @@ Collection of kludges for js
   + types.js - add typing to fn's args and local vars, check arity of fn
   + const.js - use const :)
 
-all examples uses safejs subdialect of js
+all examples uses <a href=https://github.com/safejs/SafeJS>safejs subdialect of js</a> 
