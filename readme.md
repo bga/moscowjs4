@@ -6,4 +6,5 @@ Collection of kludges for js
   + real private via double prototype.safejs - real privates in js!
   + types.js - add typing to fn's args and local vars, check arity of fn
   + const.js - use const :)
+
 all examples uses safejs subdialect of js
